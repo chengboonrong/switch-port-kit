@@ -17,18 +17,22 @@ struct ProbeView: View {
                 VStack(alignment: .leading, spacing: 16) {
                     Text("SwitchPortKit · Hardware Research")
                         .font(.headline)
+                        .accessibilityIdentifier("probe.heading")
                     Text("Reports Metal capabilities. This does not run Nintendo Switch games.")
                         .foregroundStyle(.secondary)
                     Button("Run Probe") {
                         result = MetalProbe.run()
                     }
                     .buttonStyle(.borderedProminent)
+                    .accessibilityIdentifier("probe.run")
                     ShareLink(item: result) {
                         Label("Share Diagnostics", systemImage: "square.and.arrow.up")
                     }
+                    .accessibilityIdentifier("probe.share")
                     Text(result)
                         .font(.system(.footnote, design: .monospaced))
                         .textSelection(.enabled)
+                        .accessibilityIdentifier("probe.report")
                 }
                 .padding()
             }
