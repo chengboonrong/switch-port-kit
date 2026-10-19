@@ -39,6 +39,11 @@ enum MetalProbe {
             lines.append("\(entry.1)_texture_allocation: \(texture == nil ? "FAILED" : "OK")")
         }
         lines.append(contentsOf: BCTextureSamplingProbe.run(device: device))
+        if #available(iOS 26.0, *) {
+            lines.append(SPKMetal4SubmitProbe(device))
+        } else {
+            lines.append("metal4_native_submit: UNSUPPORTED_OS")
+        }
         let queue = device.makeCommandQueue()
         lines.append("command_queue: \(queue == nil ? "FAILED" : "OK")")
         lines.append("note: BC1/BC3 sampling tests compare GPU readback against known red fixtures; BC7 sampling is not yet tested.")
