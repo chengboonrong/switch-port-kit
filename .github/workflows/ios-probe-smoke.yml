@@ -1,0 +1,72 @@
+name: iOS Probe Simulator Smoke
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'apps/A17ProMetalProbe/**'
+      - 'project.yml'
+      - 'e2e/**'
+      - '.github/workflows/ios-probe-smoke.yml'
+permissions:
+  contents: read
+jobs:
+  smoke:
+    runs-on: macos-15
+    timeout-minutes: 35
+    env:
+      E2E_TELEMETRY_DISABLED: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - name: Environment
+        run: |
+          xcodebuild -version
+          xcrun simctl list devices available
+      - name: Generate Xcode project
+        run: |
+          brew install xcodegen
+          xcodegen generate
+      - name: Boot an available iPad simulator
+        id: simulator
+        shell: bash
+        run: |
+          set -euo pipefail
+          UDID=$(xcrun simctl list devices available -j | python3 -c 'import sys,json; d=json.load(sys.stdin)["devices"]; a=[x["udid"] for v in d.values() for x in v if "iPad" in x["name"] and x["isAvailable"]]; print(a[0] if a else "")')
+          test -n "$UDID" || { echo "No available iPad Simulator"; exit 1; }
+          echo "udid=$UDID" >> "$GITHUB_OUTPUT"
+          xcrun simctl boot "$UDID" || true
+          xcrun simctl bootstatus "$UDID" -b
+      - name: Build and install simulator app
+        env:
+          SIM_UDID: ${{ steps.simulator.outputs.udid }}
+        run: |
+          set -euo pipefail
+          xcodebuild -project A17ProMetalProbe.xcodeproj -scheme A17ProMetalProbe -configuration Debug -sdk iphonesimulator -destination "id=$SIM_UDID" -derivedDataPath build CODE_SIGNING_ALLOWED=NO build
+          xcrun simctl install "$SIM_UDID" build/Build/Products/Debug-iphonesimulator/A17ProMetalProbe.app
+      - name: Node setup
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install test dependencies
+        working-directory: e2e
+        run: npm install --ignore-scripts --no-audit --no-fund
+      - name: Test mobile engine
+        working-directory: e2e
+        run: |
+          npx agent-device doctor
+          npm run test:e2e
+
+      - name: Collect simulator diagnostics on failure
+        if: failure()
+        shell: bash
+        env:
+          SIM_UDID: ${{ steps.simulator.outputs.udid }}
+        run: |
+          mkdir -p diagnostics
+          xcrun simctl spawn "$SIM_UDID" log show --last 8m --style compact --predicate 'process == "A17ProMetalProbe"' > diagnostics/probe.log 2>&1 || true
+          find "$HOME/Library/Logs/DiagnosticReports" -maxdepth 1 -iname '*A17ProMetalProbe*' -type f -exec cp {} diagnostics/ \; 2>/dev/null || true
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: ios-simulator-diagnostics
+          path: diagnostics/
+          retention-days: 3
