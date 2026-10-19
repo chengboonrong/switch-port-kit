@@ -4,6 +4,16 @@ import UIKit
 
 enum MetalProbe {
     static func run() -> String {
+        #if targetEnvironment(simulator)
+        // Simulator GPU capabilities do not represent a physical A17 Pro.
+        // Keep this path deterministic for UI tests; run hardware probes only on device.
+        return [
+            "SwitchPortKit Metal Capability Report",
+            "execution_environment: simulator",
+            "hardware_probes: SKIPPED",
+            "note: Physical iPad mini A17 Pro required for BC texture validation."
+        ].joined(separator: "\n")
+        #else
         guard let device = MTLCreateSystemDefaultDevice() else {
             return "ERROR: Metal device unavailable."
         }
@@ -33,5 +43,6 @@ enum MetalProbe {
         lines.append("command_queue: \(queue == nil ? "FAILED" : "OK")")
         lines.append("note: BC1/BC3 sampling tests compare GPU readback against known red fixtures; BC7 sampling is not yet tested.")
         return lines.joined(separator: "\n")
+        #endif
     }
 }
