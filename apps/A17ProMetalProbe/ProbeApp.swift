@@ -25,13 +25,16 @@ struct ProbeView: View {
                     }
                     .buttonStyle(.borderedProminent)
                     .accessibilityIdentifier("probe.run")
+                    .accessibilityIdentifier("probe.run")
                     ShareLink(item: result) {
                         Label("Share Diagnostics", systemImage: "square.and.arrow.up")
                     }
                     .accessibilityIdentifier("probe.share")
+                    .accessibilityIdentifier("probe.share")
                     Text(result)
                         .font(.system(.footnote, design: .monospaced))
                         .textSelection(.enabled)
+                        .accessibilityIdentifier("probe.result")
                         .accessibilityIdentifier("probe.report")
                 }
                 .padding()
