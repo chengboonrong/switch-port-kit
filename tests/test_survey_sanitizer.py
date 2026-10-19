@@ -20,6 +20,16 @@ class SanitizerTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             sanitize("Graphics: nvn\nGraphics: vulkan")
 
+    def test_same_value_repeated_is_allowed(self):
+        result = sanitize("""Graphics: nvn
+Graphics: nvn
+""")
+        self.assertEqual(result["graphics_api"], "nvn")
+
+    def test_invalid_title_id_is_discarded(self):
+        result = sanitize("Title ID: 010015100B514000 /Users/private\\n")
+        self.assertNotIn("title_id", result)
+
     def test_unknown_and_key_lines_discarded(self):
         result = sanitize("prod.keys: sensitive\nNSO main: 123456\nuser: test\n")
         self.assertEqual(set(result), {"schema_version", "source_type", "requires_manual_review"})

@@ -34,9 +34,15 @@ def main() -> int:
     parser.add_argument("survey", type=Path)
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
+    if args.survey.is_symlink() or not args.survey.is_file():
+        parser.error("survey must be a regular, non-symlink file")
     if args.survey.stat().st_size > MAX_BYTES:
         parser.error("survey too large")
-    output = json.dumps(sanitize(args.survey.read_text(encoding="utf-8")), indent=2) + "\n"
+    try:
+        raw = args.survey.read_text(encoding="utf-8")
+        output = json.dumps(sanitize(raw), indent=2) + "\n"
+    except (UnicodeError, ValueError) as exc:
+        parser.error("invalid input: " + str(exc))
     if args.output:
         args.output.write_text(output, encoding="utf-8")
     else:
