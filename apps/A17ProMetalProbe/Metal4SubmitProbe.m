@@ -11,6 +11,7 @@ NSString *SPKMetal4SubmitProbe(id<MTLDevice> device) {
     if (@available(iOS 26.0, *)) {
         NSError *error = nil;
         MTL4CommandQueueDescriptor *queueDescriptor = [MTL4CommandQueueDescriptor new];
+        queueDescriptor.feedbackQueue = dispatch_get_global_queue(QOS_CLASS_UTILITY, 0);
         id<MTL4CommandQueue> queue = [device newMTL4CommandQueueWithDescriptor:queueDescriptor error:&error];
         if (!queue) return [NSString stringWithFormat:@"metal4_native_submit: FAIL_QUEUE %@", error.localizedDescription ?: @""];
         MTL4CommandAllocatorDescriptor *allocatorDescriptor = [MTL4CommandAllocatorDescriptor new];
@@ -21,8 +22,20 @@ NSString *SPKMetal4SubmitProbe(id<MTLDevice> device) {
         [buffer beginCommandBufferWithAllocator:allocator];
         [buffer endCommandBuffer];
         id<MTL4CommandBuffer> buffers[] = { buffer };
-        [queue commit:buffers count:1 options:nil];
-        return @"metal4_native_submit: SUBMITTED_UNVERIFIED";
+        dispatch_semaphore_t done = dispatch_semaphore_create(0);
+        MTL4CommitOptions *options = [MTL4CommitOptions new];
+        [options addFeedbackHandler:^(id<MTL4CommitFeedback> feedback) {
+            (void)feedback;
+            dispatch_semaphore_signal(done);
+        }];
+        [queue commit:buffers count:1 options:options];
+        long waitResult = dispatch_semaphore_wait(
+            done, dispatch_time(DISPATCH_TIME_NOW, 3 * NSEC_PER_SEC));
+        // The feedback callback signals completion of the empty submission.
+        // It does not validate actual GPU rendering or memory correctness.
+        return waitResult == 0
+            ? @"metal4_native_submit: FEEDBACK_RECEIVED_EMPTY"
+            : @"metal4_native_submit: TIMEOUT_EMPTY";
     }
     return @"metal4_native_submit: UNSUPPORTED_OS";
 #endif
