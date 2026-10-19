@@ -28,9 +28,10 @@ enum MetalProbe {
             let texture = device.makeTexture(descriptor: descriptor)
             lines.append("\(entry.1)_texture_allocation: \(texture == nil ? "FAILED" : "OK")")
         }
+        lines.append(contentsOf: BCTextureSamplingProbe.run(device: device))
         let queue = device.makeCommandQueue()
         lines.append("command_queue: \(queue == nil ? "FAILED" : "OK")")
-        lines.append("note: Allocation checks do not prove shader sampling or correct rendering.")
+        lines.append("note: BC1/BC3 sampling tests compare GPU readback against known red fixtures; BC7 sampling is not yet tested.")
         return lines.joined(separator: "\n")
     }
 }
