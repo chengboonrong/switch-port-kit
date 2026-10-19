@@ -1,0 +1,20 @@
+name: A17ProMetalProbe
+options:
+  bundleIdPrefix: dev.switchportkit
+targets:
+  A17ProMetalProbe:
+    type: application
+    platform: iOS
+    deploymentTarget: "18.0"
+    sources:
+      - path: apps/A17ProMetalProbe
+    settings:
+      base:
+        SWIFT_VERSION: 5.0
+        TARGETED_DEVICE_FAMILY: "2"
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
+        GENERATE_INFOPLIST_FILE: YES
+        CODE_SIGN_STYLE: Automatic
+        PRODUCT_BUNDLE_IDENTIFIER: dev.switchportkit.A17ProMetalProbe
+        ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS: NO
