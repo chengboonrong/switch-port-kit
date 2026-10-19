@@ -39,6 +39,7 @@ enum MetalProbe {
             lines.append("\(entry.1)_texture_allocation: \(texture == nil ? "FAILED" : "OK")")
         }
         lines.append(contentsOf: BCTextureSamplingProbe.run(device: device))
+        lines.append(contentsOf: MetalRuntimeProbe.run(device: device))
         let queue = device.makeCommandQueue()
         lines.append("command_queue: \(queue == nil ? "FAILED" : "OK")")
         lines.append("note: BC1/BC3 sampling tests compare GPU readback against known red fixtures; BC7 sampling is not yet tested.")
