@@ -21,7 +21,9 @@ class SanitizerTests(unittest.TestCase):
             sanitize("Graphics: nvn\nGraphics: vulkan")
 
     def test_same_value_repeated_is_allowed(self):
-        result = sanitize("Graphics: nvn\\nGraphics: nvn\\n")
+        result = sanitize("""Graphics: nvn
+Graphics: nvn
+""")
         self.assertEqual(result["graphics_api"], "nvn")
 
     def test_invalid_title_id_is_discarded(self):
