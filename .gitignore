@@ -1,0 +1,24 @@
+# Private game data and signing material — never commit
+*.nsp
+*.xci
+*.nca
+*.tik
+*.keys
+*.key
+*.ipa
+*.p12
+*.mobileprovision
+prod.keys
+**/RomFS/
+**/ExeFS/
+**/*_build/
+**/*_survey/
+**/survey.md
+.env
+.env.*
+.DS_Store
+__pycache__/
+*.pyc
+*.xcodeproj/
+*.xcworkspace/
+DerivedData/
