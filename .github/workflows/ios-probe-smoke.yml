@@ -1,6 +1,12 @@
 name: iOS Probe Simulator Smoke
 on:
   workflow_dispatch:
+  pull_request:
+    paths:
+      - 'apps/A17ProMetalProbe/**'
+      - 'project.yml'
+      - 'e2e/**'
+      - '.github/workflows/ios-probe-smoke.yml'
 permissions:
   contents: read
 jobs:
