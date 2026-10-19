@@ -54,3 +54,19 @@ jobs:
         run: |
           npx agent-device doctor
           npm run test:e2e
+
+      - name: Collect simulator diagnostics on failure
+        if: failure()
+        shell: bash
+        env:
+          SIM_UDID: ${{ steps.simulator.outputs.udid }}
+        run: |
+          mkdir -p diagnostics
+          xcrun simctl spawn "$SIM_UDID" log show --last 8m --style compact --predicate 'process == "A17ProMetalProbe"' > diagnostics/probe.log 2>&1 || true
+          find "$HOME/Library/Logs/DiagnosticReports" -maxdepth 1 -iname '*A17ProMetalProbe*' -type f -exec cp {} diagnostics/ \; 2>/dev/null || true
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: ios-simulator-diagnostics
+          path: diagnostics/
+          retention-days: 3
