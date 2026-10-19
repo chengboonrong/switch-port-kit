@@ -41,6 +41,7 @@ enum MetalProbe {
         lines.append(contentsOf: BCTextureSamplingProbe.run(device: device))
         if #available(iOS 26.0, *) {
             lines.append(SPKMetal4SubmitProbe(device))
+            lines.append(SPKMetal4ComputeProbe(device))
         } else {
             lines.append("metal4_native_submit: UNSUPPORTED_OS")
         }
