@@ -19,6 +19,7 @@ enum MetalProbe {
         }
         var lines = [
             "SwitchPortKit Metal Capability Report",
+            "execution_environment: physical_device",
             "timestamp: \(ISO8601DateFormatter().string(from: Date()))",
             "device_model: \(UIDevice.current.model)",
             "os: \(UIDevice.current.systemName) \(UIDevice.current.systemVersion)",
