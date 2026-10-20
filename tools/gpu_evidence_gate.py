@@ -11,13 +11,15 @@ def classify(report: str) -> dict:
             key, value = line.split(": ", 1)
             fields[key.strip()] = value.strip()
     simulator = fields.get("execution_environment") == "simulator"
+    physical = fields.get("execution_environment") == "physical_device"
     output = fields.get("metal4_compute") == "OUTPUT_VERIFIED"
     bc = fields.get("bc_texture_compression", "").lower() == "true"
     return {
         "schema_version": 1,
         "simulator": simulator,
-        "metal4_compute_output_verified": bool(output and not simulator),
-        "bc_support_reported": bool(bc and not simulator),
+        "physical_device_reported": physical,
+        "metal4_compute_output_verified": bool(output and physical),
+        "bc_support_reported": bool(bc and physical),
         "full_nxnative_compatibility_proven": False,
         "shinchan_gameplay_proven": False,
         "requires_real_device_evidence": True,
