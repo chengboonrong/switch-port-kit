@@ -4,6 +4,7 @@ import argparse
 import json
 import struct
 from pathlib import Path
+from tools.relr_decoder import relr_sites
 
 DT_NAMES = {
     0:"NULL", 4:"HASH", 5:"STRTAB", 6:"SYMTAB", 7:"RELA", 8:"RELASZ",
@@ -50,6 +51,7 @@ def inspect_mod0(data: bytes) -> dict:
         addr, size = values.get(addr_tag,0), values.get(size_tag,0)
         if size and (addr > image_size or size > image_size - addr):
             raise ValueError("relocation table outside image")
+    relr = relr_sites(data, values[36], values[35], image_size) if values.get(35, 0) else []
     return {
         "schema_version": 1, "format": "NRO0",
         "mod0_offset": mod_offset, "dynamic_offset": dynamic_offset,
@@ -57,6 +59,9 @@ def inspect_mod0(data: bytes) -> dict:
         "rela_present": values.get(8,0) > 0,
         "relr_present": values.get(35,0) > 0,
         "relr_size": values.get(35,0),
+        "relr_target_count": len(relr),
+        "relr_min_target": min(relr) if relr else None,
+        "relr_max_target": max(relr) if relr else None,
         "relr_entry_size": values.get(37, None),
         "relocations_applied": False,
         "executable_loaded": False,
