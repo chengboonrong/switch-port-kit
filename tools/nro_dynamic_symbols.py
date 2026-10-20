@@ -44,7 +44,7 @@ def inspect_dynamic_symbols(blob: bytes) -> dict:
         if name_off >= strsize:
             raise ValueError("symbol name outside string table")
         if name_off:
-            end = blob.find(b"\\0", strings+name_off, strings+strsize)
+            end = blob.find(bytes([0]), strings+name_off, strings+strsize)
             if end < 0:
                 raise ValueError("unterminated symbol name")
             named += 1
