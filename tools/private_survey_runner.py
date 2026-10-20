@@ -19,6 +19,18 @@ def plan(nxnative: Path, game_dir: Path, keys: Path) -> dict:
             "operation": "nxnative --survey-only",
             "executes_game_data": False, "no_network_enforced": False}
 
+def validate_log_dir(log_dir: Path, nxnative: Path, game_dir: Path) -> Path:
+    destination = log_dir.expanduser().resolve()
+    excluded = [Path(__file__).resolve().parent.parent,
+                nxnative.expanduser().resolve(), game_dir.expanduser().resolve()]
+    for root in excluded:
+        if destination == root or root in destination.parents:
+            raise ValueError("logs must be outside project, nxnative and game folders")
+    if destination.exists() and not destination.is_dir():
+        raise ValueError("log destination must be a directory")
+    return destination
+
+
 def main() -> int:
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--nxnative", type=Path, required=True)
@@ -37,14 +49,26 @@ def main() -> int:
         return 2
     if args.log_dir is None:
         p.error("--log-dir is required with --run; keep it outside public repositories")
-    args.log_dir.mkdir(mode=0o700, parents=True, exist_ok=True)
-    log = args.log_dir / "survey-run.log"
+    try:
+        log_dir = validate_log_dir(args.log_dir, args.nxnative, args.game_dir)
+    except ValueError as exc:
+        p.error(str(exc))
+    log_dir.mkdir(mode=0o700, parents=True, exist_ok=True)
+    try:
+        help_result = subprocess.run(
+            [sys.executable, str(args.nxnative / "scripts/build_ipa_from_nsp.py"), "--help"],
+            cwd=args.nxnative, capture_output=True, text=True, check=False, timeout=30)
+    except (OSError, subprocess.TimeoutExpired):
+        p.error("could not verify upstream --survey-only support")
+    if help_result.returncode != 0 or "--survey-only" not in help_result.stdout:
+        p.error("upstream builder does not confirm --survey-only support")
+    log = log_dir / "survey-run.log"
     if log.is_symlink():
         p.error("refusing symlink log")
     command = [sys.executable, str(args.nxnative / "scripts/build_ipa_from_nsp.py"),
                str(args.game_dir), "-k", str(args.keys), "--survey-only"]
     # Logs can contain local paths and game-derived material: private only.
-    fd = os.open(log, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    fd = os.open(log, os.O_WRONLY | os.O_CREAT | os.O_TRUNC | getattr(os, "O_NOFOLLOW", 0), 0o600)
     with os.fdopen(fd, "w", encoding="utf-8") as stream:
         outcome = subprocess.run(command, cwd=args.nxnative, stdout=stream,
                                  stderr=subprocess.STDOUT, check=False)
