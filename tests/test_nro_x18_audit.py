@@ -30,3 +30,13 @@ class X18Tests(unittest.TestCase):
     def test_shifted_register_without_x18(self):
         r = audit_x18(sample([0x8b010000]))
         self.assertEqual(r["recognized_x18_candidates"], 0)
+
+    def test_logical_shifted_register_x18_positions(self):
+        # ORR X0,X18,X1; ORR X18,X0,X1; ORR X0,X1,X18
+        words = [0xaa010240, 0xaa010012, 0xaa120020]
+        r = audit_x18(sample(words))
+        self.assertEqual(r["by_instruction_family"]["logical_shifted_register"], 3)
+
+    def test_logical_register_unrelated(self):
+        r = audit_x18(sample([0xaa010000]))
+        self.assertEqual(r["recognized_x18_candidates"], 0)

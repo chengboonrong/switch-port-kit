@@ -20,12 +20,16 @@ def audit_x18(data: bytes) -> dict:
         elif word & 0x1fe00000 == 0x0b000000:
             # ADD/SUB shifted-register forms; Rm/Rn/Rd are real GPRs.
             family, regs = "add_sub_shifted_register", (word & 31, (word >> 5) & 31, (word >> 16) & 31)
+        elif word & 0x1f000000 == 0x0a000000:
+            # AND/BIC/ORR/ORN/EOR/EON/ANDS/BICS shifted-register.
+            # These have three register fields, including x18 as Rm.
+            family, regs = "logical_shifted_register", (word & 31, (word >> 5) & 31, (word >> 16) & 31)
         elif word & 0x1f800000 == 0x12800000:
             family, regs = "move_wide_immediate", (word & 31,)
         if 18 in regs:
             hits.append({"offset": addr, "instruction": f"0x{word:08x}", "family": family})
     counts = {name: sum(hit["family"] == name for hit in hits)
-              for name in ("add_sub_immediate", "load_store_unsigned_offset", "add_sub_shifted_register", "move_wide_immediate")}
+              for name in ("add_sub_immediate", "load_store_unsigned_offset", "add_sub_shifted_register", "logical_shifted_register", "move_wide_immediate")}
     return {"schema_version": 1, "recognized_x18_candidates": len(hits),
             "by_instruction_family": counts, "hits": hits,
             "coverage": "partial; other AArch64 instructions NOT examined",
