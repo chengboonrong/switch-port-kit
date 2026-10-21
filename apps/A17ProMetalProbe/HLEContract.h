@@ -8,6 +8,7 @@ extern "C" {
 // Host-only test protocol. These IDs are NOT Nintendo Horizon SVC numbers.
 enum {
     SPK_HOST_PING = 1,
+    SPK_HOST_MONOTONIC_NANOS = 2,
     SPK_HOST_UNIMPLEMENTED = 0xFFFFFFFFu
 };
 enum {
