@@ -19,9 +19,18 @@ enum HostContractProbe {
             && unknown.result == UInt32(SPK_RESULT_NOT_IMPLEMENTED)
             && unknown.value == 0
 
+        var t0 = SPKHostReply()
+        var t1 = SPKHostReply()
+        let clock0 = spk_host_dispatch(UInt32(SPK_HOST_MONOTONIC_NANOS), 0, &t0)
+        let clock1 = spk_host_dispatch(UInt32(SPK_HOST_MONOTONIC_NANOS), 0, &t1)
+        let clockOK = clock0 == UInt32(SPK_RESULT_OK)
+            && clock1 == UInt32(SPK_RESULT_OK)
+            && t0.value > 0 && t1.value >= t0.value
+
         return [
             "host_contract_ping: \(pingOK ? "PASS" : "FAIL")",
             "host_contract_unknown_request: \(unknownOK ? "PASS" : "FAIL")",
+            "host_contract_monotonic_clock: \(clockOK ? "PASS" : "FAIL")",
             "host_contract_scope: HOST_ONLY_NOT_HORIZON"
         ]
     }
