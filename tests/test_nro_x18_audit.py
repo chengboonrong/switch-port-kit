@@ -21,3 +21,12 @@ class X18Tests(unittest.TestCase):
     def test_invalid_nro(self):
         with self.assertRaises(ValueError):
             audit_x18(bytes(256))
+
+    def test_shifted_register_detects_all_operand_positions(self):
+        # ADD X0, X18, X1; ADD X18, X0, X1; ADD X0, X1, X18
+        words = [0x8b010240, 0x8b010012, 0x8b120020]
+        r = audit_x18(sample(words))
+        self.assertEqual(r["by_instruction_family"]["add_sub_shifted_register"], 3)
+    def test_shifted_register_without_x18(self):
+        r = audit_x18(sample([0x8b010000]))
+        self.assertEqual(r["recognized_x18_candidates"], 0)
