@@ -45,5 +45,12 @@ class HostContractTests(unittest.TestCase):
         code = self.lib.spk_host_dispatch(0x52, 123, ctypes.byref(r))
         self.assertEqual(code, 0xF601)
         self.assertEqual(r.value, 0)
+    def test_monotonic_clock(self):
+        first, second = Reply(), Reply()
+        self.assertEqual(self.lib.spk_host_dispatch(2, 0, ctypes.byref(first)), 0)
+        self.assertEqual(self.lib.spk_host_dispatch(2, 0, ctypes.byref(second)), 0)
+        self.assertGreater(first.value, 0)
+        self.assertGreaterEqual(second.value, first.value)
+
     def test_null_pointer_rejected(self):
         self.assertEqual(self.lib.spk_host_dispatch(1, 1, None), 0xF602)
