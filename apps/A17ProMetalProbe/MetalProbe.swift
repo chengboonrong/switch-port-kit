@@ -17,9 +17,12 @@ enum MetalProbe {
         guard let device = MTLCreateSystemDefaultDevice() else {
             return "ERROR: Metal device unavailable."
         }
+        var hostReply = SPKHostReply()
+        let hostStatus = spk_host_dispatch(UInt32(SPK_HOST_PING), 0x1234, &hostReply)
         var lines = [
             "SwitchPortKit Metal Capability Report",
             "execution_environment: physical_device",
+            "host_contract_ping: \(hostStatus == 0 && hostReply.abi_version == 1 ? "PASS" : "FAIL")",
             "timestamp: \(ISO8601DateFormatter().string(from: Date()))",
             "device_model: \(UIDevice.current.model)",
             "os: \(UIDevice.current.systemName) \(UIDevice.current.systemVersion)",
