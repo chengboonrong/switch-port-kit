@@ -45,8 +45,9 @@ class GuestStartupTests(unittest.TestCase):
                                                ctypes.byref(count))
         return code, count.value, [(e.key, e.flags, tuple(e.value)) for e in out]
 
-    def test_entry_layout_matches_libnx_config_entry(self):
-        self.assertEqual(ctypes.sizeof(Entry), 24)  # 2048 envSetup strides by 0x18
+    def test_ctypes_mirror_is_24_bytes(self):
+        # The C side is pinned by _Static_assert; this keeps the mirror honest.
+        self.assertEqual(ctypes.sizeof(Entry), 24)
 
     def test_with_heap_override(self):
         code, count, entries = self.build(Startup(0x1234, 0x8000000, 0x2000000))

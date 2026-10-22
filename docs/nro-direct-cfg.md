@@ -1,8 +1,8 @@
 # 2048 NRO direct-branch candidate graph
 
-The `tools/nro_direct_cfg.py` function starts at the NRO text entry offset and explores direct AArch64 B, BL, B.cond, CBZ/CBNZ and TBZ/TBNZ edges, plus fallthrough. It stops at BR/RET and at UDF (the permanently-undefined word compilers emit after noreturn calls), and records BLR as an unresolved indirect frontier while continuing its fallthrough.
+The `tools/nro_direct_cfg.py` function starts at the NRO text entry offset and explores direct AArch64 B, BL, B.cond, CBZ/CBNZ and TBZ/TBNZ edges, plus fallthrough. It stops at BR/RET and at UDF (in 2048 almost all are zero padding between functions), and records BLR as an unresolved indirect frontier while continuing its fallthrough.
 
-**This is an approximate static graph, not proof of executable reachability.** It does not resolve BR/BLR, exception returns, function pointers or jump tables; inline data may be mistaken for instructions. It does not run ARM64 instructions.
+**This is an approximate static graph, not proof of executable reachability.** Calls to noreturn functions that are not followed by UDF still fall through into the next function (in 2048, 41 of 46 `diagAbortWithResult` call sites), which adds false candidates. It does not resolve BR/BLR, exception returns, function pointers or jump tables; inline data may be mistaken for instructions. It does not run ARM64 instructions.
 
 Read-only local measurements on the user-supplied `2048.nro`:
 - 44,032 four-byte instruction slots in the declared text region

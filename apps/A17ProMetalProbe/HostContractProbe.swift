@@ -59,7 +59,7 @@ enum HostContractProbe {
             "host_contract_unknown_request: \(unknownOK ? "PASS" : "FAIL")",
             "host_contract_monotonic_clock: \(clockOK ? "PASS" : "FAIL")",
             "host_contract_reserved_argument: \(reservedOK ? "PASS" : "FAIL")",
-            "guest_startup_config: \(configOK ? "PASS" : "FAIL")",
+            "guest_config_list_build: \(configOK ? "PASS" : "FAIL")",
             "host_contract_scope: HOST_ONLY_NOT_HORIZON"
         ]
     }

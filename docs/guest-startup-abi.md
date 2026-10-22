@@ -24,7 +24,7 @@ The entry is libnx `switch_crt0.s`: `b 0x80`, then at `0x80` the same instructio
 |---|---|
 | `x0` | guest address of the loader config list (below); must be non-zero |
 | `x1` | `0xFFFFFFFFFFFFFFFF` |
-| `x30` | loader return address. libnx keeps it and, on exit, restores `sp` and branches there with `w0` = result code |
+| `x30` | loader return address. On exit libnx restores `sp` and branches there with `w0` = 0 for a normal exit, or an error result (for example Module 346 for an unknown mandatory config key) |
 | `sp` | top of the main-thread stack, 16-byte aligned; saved to `__stack_top` |
 
 crt0 dispatch: `x0 != 0 && x1 != UINT64_MAX` enters `__libnx_exception_entry` (`0xf51c`). `x0 == 0` is the NSO path, with `x1` = main thread handle. The homebrew path above is the only one this spec covers.
@@ -43,9 +43,9 @@ crt0 calls `__nx_dynamic` and then `__libnx_init` (`0xd0f0`). `__libnx_init` mak
 | 5 | `0xfca0` | `__libnx_init_thread` | `0x6` QueryMemory, `0x1a`, `0x1b` ArbitrateUnlock, `0x26` | Main thread handle; queries its own stack mapping |
 | 6 | `0xc980` | `argvSetup` | `0x6`, `0x1a`, `0x26` | — |
 | 7 | `0xcfb0` | `__appInit` | `0x6 0xb 0x13 0x14 0x16 0x17 0x18 0x1a 0x1b 0x1c 0x1d 0x1f 0x21 0x26 0x29 0x52` | Horizon services over IPC (below) |
-| 8 | `0x21ca0` | `__libc_init_array` (tail call) | none; 4 indirect | Static constructors run through `blr` |
+| 8 | `0x21ca0` | `__libc_init_array` (tail call) | none; 2 `blr` + 2 returns | Static constructors run through `blr` |
 
-The SVC columns come from `analyze_entry(nro, start=<offset>)` in `tools/nro_direct_cfg.py`. That analysis follows only direct branches and stops at `UDF`; it does not follow `blr`, so calls through function pointers are missing and the sets are candidates, not traces. SVC names are from libnx `svc.s`.
+The SVC columns come from `analyze_entry(nro, start=<offset>)` in `tools/nro_direct_cfg.py`. That analysis follows only direct branches and stops at `UDF`; it does not follow `blr`, so calls through function pointers are missing. It also still falls through after noreturn calls that have no UDF behind them (41 of the 46 `diagAbortWithResult` call sites), which can add false candidates. The sets are candidates, not traces. SVC names are from libnx `svc.s`.
 
 `__appInit` is libnx's default. Its abort codes are Module 345 with `InitFail_SM`, `InitFail_AM`, `InitFail_HID`, `InitFail_Time` and `InitFail_FS`, and it initializes, in order:
 - **`sm`:** required.
@@ -60,7 +60,7 @@ This IPC layer is the next blocker.
 
 ## Loader config list
 
-libnx `ConfigEntry`: `u32 key`, `u32 flags`, `u64 value[2]`, 24 bytes. 2048's `envSetup` steps through the list `0x18` bytes at a time until key 0. Its jump table covers keys 1–17 (`cmp w1, #0x10` after `key - 1`), and it contains the `HosVersion` `ATMOSPHR` check, so it is a libnx at least as new as key 17 (`SyscallAvailableHint2`). An unhandled key with flag bit 0 (mandatory) set exits to the loader with Module 346 (HomebrewAbi), description `100 + key`. `END_OF_LIST` carries an optional loader-info string pointer and size.
+libnx `ConfigEntry`: `u32 key`, `u32 flags`, `u64 value[2]`, 24 bytes. 2048's `envSetup` steps through the list `0x18` bytes at a time until key 0. Its jump table covers keys 1–17 (`cmp w1, #0x10` after `key - 1`). Keys 8, 9, 12 and 13 go to the default case; every other key from 1 to 17 has a handler, including 16 (`HosVersion`, with the `ATMOSPHR` check) and 17 (`SyscallAvailableHint2`). An unhandled key with flag bit 0 (mandatory) set exits to the loader with Module 346 (HomebrewAbi), description `100 + key`. `END_OF_LIST` carries an optional loader-info string pointer and size.
 
 `spk_guest_config_build` (`apps/A17ProMetalProbe/GuestStartup.c`) emits:
 

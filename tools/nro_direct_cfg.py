@@ -23,7 +23,7 @@ def analyze_entry(blob: bytes, max_instructions: int = 100000, start: int | None
         raise ValueError("invalid instruction limit")
     end = text_off + text_size
     entry = text_off if start is None else text_off + start
-    if not (text_off <= entry < end and entry % 4 == 0):
+    if not (isinstance(entry, int) and text_off <= entry < end and entry % 4 == 0):
         raise ValueError("invalid start offset")
     queue = deque([entry])
     visited = set()
@@ -75,7 +75,7 @@ def analyze_entry(blob: bytes, max_instructions: int = 100000, start: int | None
         elif word & 0xffe0001f in (0xd4000002, 0xd4000003, 0xd4200000):
             kinds["trap_stop"] += 1
         elif word & 0xffff0000 == 0:
-            # UDF #imm16: permanently undefined, emitted after noreturn calls.
+            # UDF #imm16 (includes zero padding between functions): never falls through.
             kinds["udf_stop"] += 1
         else:
             targets = [next_pc]
