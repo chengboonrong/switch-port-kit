@@ -14,6 +14,7 @@ test('runs the probe and displays a report', async ({ app, screen }) => {
   await expect(screen.getByTestId('probe.report')).toContainText('host_contract_ping: PASS');
   await expect(screen.getByTestId('probe.report')).toContainText('host_contract_unknown_request: PASS');
   await expect(screen.getByTestId('probe.report')).toContainText('host_contract_monotonic_clock: PASS');
+  await expect(screen.getByTestId('probe.report')).toContainText('host_contract_reserved_argument: PASS');
   await expect(screen.getByTestId('probe.report')).toContainText('hardware_probes: SKIPPED');
   await expect(screen.getByTestId('probe.share')).toBeVisible();
 });

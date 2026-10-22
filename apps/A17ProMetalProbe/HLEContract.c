@@ -6,7 +6,7 @@ uint32_t spk_host_dispatch(uint32_t request, uint64_t argument, SPKHostReply *re
     if (reply == 0) {
         return SPK_RESULT_INVALID_ARGUMENT;
     }
-    reply->abi_version = 1;
+    reply->abi_version = SPK_HOST_ABI_VERSION;
     reply->value = 0;
     reply->result = SPK_RESULT_NOT_IMPLEMENTED;
     if (request == SPK_HOST_PING) {
@@ -15,6 +15,10 @@ uint32_t spk_host_dispatch(uint32_t request, uint64_t argument, SPKHostReply *re
         reply->result = SPK_RESULT_OK;
     }
     if (request == SPK_HOST_MONOTONIC_NANOS) {
+        if (argument != 0) {
+            reply->result = SPK_RESULT_INVALID_ARGUMENT;
+            return reply->result;
+        }
         struct timespec now;
         if (clock_gettime(CLOCK_MONOTONIC, &now) == 0 &&
             now.tv_sec >= 0 && now.tv_nsec >= 0 && now.tv_nsec < 1000000000L) {
