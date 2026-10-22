@@ -18,7 +18,8 @@ enum {
 enum {
     SPK_RESULT_OK = 0,
     SPK_RESULT_NOT_IMPLEMENTED = 0xF601,
-    SPK_RESULT_INVALID_ARGUMENT = 0xF602
+    SPK_RESULT_INVALID_ARGUMENT = 0xF602,
+    SPK_RESULT_HOST_FAILURE = 0xF603
 };
 typedef struct {
     uint32_t abi_version;

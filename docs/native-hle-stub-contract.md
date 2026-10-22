@@ -7,10 +7,10 @@ This is a portable C **host-only test interface**, not an implementation of Nint
 | Request | ID | Argument | Reply |
 |---|---|---|---|
 | `SPK_HOST_PING` | 1 | any | `OK`, value = argument XOR `0x0A17A17A17A17A17` |
-| `SPK_HOST_MONOTONIC_NANOS` | 2 | reserved, must be 0 | `OK`, value = host `CLOCK_MONOTONIC` in nanoseconds; non-zero argument → `INVALID_ARGUMENT`, value 0 |
+| `SPK_HOST_MONOTONIC_NANOS` | 2 | reserved, must be 0 | `OK`, value = host `CLOCK_MONOTONIC` in nanoseconds; non-zero argument → `INVALID_ARGUMENT`; `clock_gettime` failure → `HOST_FAILURE`; value 0 on error |
 | anything else | — | — | `NOT_IMPLEMENTED`, value 0 |
 
-`SPKHostReply` is 16 bytes (`abi_version` at 0, `result` at 4, `value` at 8); `_Static_assert`s in `HLEContract.h` fail the build on any compiler that lays it out differently. Unit tests and the in-app probe bracket the clock reply between two direct `CLOCK_MONOTONIC` reads, which proves the clock source and the nanosecond unit.
+`SPKHostReply` is 16 bytes (`abi_version` at 0, `result` at 4, `value` at 8); `_Static_assert`s in `HLEContract.h` fail the build on any compiler that lays it out differently. Unit tests and the in-app probe bracket the clock reply between two direct `CLOCK_MONOTONIC` reads. That pins the nanosecond unit and rules out wall-clock time; it cannot tell `CLOCK_MONOTONIC` from `CLOCK_BOOTTIME` on a Linux runner that has never suspended. Darwin's `CLOCK_MONOTONIC` has 1 µs granularity.
 
 `CLOCK_MONOTONIC` keeps counting while a Darwin device sleeps (Linux's does not). That is fine for host diagnostics, but it is not yet a Horizon system tick: the 2048 NRO reads `CNTVCT_EL0` directly, and any guest tick mapping (19.2 MHz counter, sleep behaviour) must be specified separately.
 

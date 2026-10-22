@@ -21,7 +21,7 @@ enum HostContractProbe {
             && unknown.value == 0
 
         // Bracket the host reply with the same Darwin clock read directly,
-        // so the value is proven to be CLOCK_MONOTONIC in nanoseconds.
+        // to check the clock source and nanosecond unit.
         var t0 = SPKHostReply()
         var t1 = SPKHostReply()
         let before = clock_gettime_nsec_np(CLOCK_MONOTONIC)

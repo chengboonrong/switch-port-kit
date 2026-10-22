@@ -47,7 +47,7 @@ class HostContractTests(unittest.TestCase):
         self.assertEqual(code, 0xF601)
         self.assertEqual(r.value, 0)
     def test_monotonic_clock(self):
-        # Bracketing with the same OS clock proves CLOCK_MONOTONIC nanoseconds.
+        # Bracketing with the same OS clock checks the nanosecond unit and clock.
         first, second = Reply(), Reply()
         before = time.clock_gettime_ns(time.CLOCK_MONOTONIC)
         self.assertEqual(self.lib.spk_host_dispatch(2, 0, ctypes.byref(first)), 0)

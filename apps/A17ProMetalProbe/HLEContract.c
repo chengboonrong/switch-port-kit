@@ -20,6 +20,7 @@ uint32_t spk_host_dispatch(uint32_t request, uint64_t argument, SPKHostReply *re
             return reply->result;
         }
         struct timespec now;
+        reply->result = SPK_RESULT_HOST_FAILURE;
         if (clock_gettime(CLOCK_MONOTONIC, &now) == 0 &&
             now.tv_sec >= 0 && now.tv_nsec >= 0 && now.tv_nsec < 1000000000L) {
             reply->value = (uint64_t)now.tv_sec * UINT64_C(1000000000) + (uint64_t)now.tv_nsec;
