@@ -3,6 +3,7 @@ import pathlib
 import shutil
 import subprocess
 import tempfile
+import time
 import unittest
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
@@ -45,5 +46,22 @@ class HostContractTests(unittest.TestCase):
         code = self.lib.spk_host_dispatch(0x52, 123, ctypes.byref(r))
         self.assertEqual(code, 0xF601)
         self.assertEqual(r.value, 0)
+    def test_monotonic_clock(self):
+        # Bracketing with the same OS clock checks the nanosecond unit and clock.
+        first, second = Reply(), Reply()
+        before = time.clock_gettime_ns(time.CLOCK_MONOTONIC)
+        self.assertEqual(self.lib.spk_host_dispatch(2, 0, ctypes.byref(first)), 0)
+        self.assertEqual(self.lib.spk_host_dispatch(2, 0, ctypes.byref(second)), 0)
+        after = time.clock_gettime_ns(time.CLOCK_MONOTONIC)
+        self.assertEqual((first.abi_version, second.abi_version), (1, 1))
+        self.assertGreater(before, 0)
+        self.assertLessEqual(before, first.value)
+        self.assertLessEqual(first.value, second.value)
+        self.assertLessEqual(second.value, after)
+    def test_monotonic_clock_rejects_reserved_argument(self):
+        r = Reply(value=0xFFFF)
+        self.assertEqual(self.lib.spk_host_dispatch(2, 1, ctypes.byref(r)), 0xF602)
+        self.assertEqual((r.abi_version, r.result, r.value), (1, 0xF602, 0))
+
     def test_null_pointer_rejected(self):
         self.assertEqual(self.lib.spk_host_dispatch(1, 1, None), 0xF602)
