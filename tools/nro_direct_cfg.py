@@ -10,7 +10,8 @@ def _signed(value, bits):
     sign = 1 << (bits - 1)
     return (value ^ sign) - sign
 
-def analyze_entry(blob: bytes, max_instructions: int = 100000) -> dict:
+def analyze_entry(blob: bytes, max_instructions: int = 100000, start: int | None = None) -> dict:
+    """Explore from the text entry, or from `start` (offset relative to text)."""
     if len(blob) < 0x80 or blob[0x10:0x14] != b"NRO0":
         raise ValueError("invalid NRO")
     image_size = struct.unpack_from("<I", blob, 0x18)[0]
@@ -21,7 +22,10 @@ def analyze_entry(blob: bytes, max_instructions: int = 100000) -> dict:
     if not 1 <= max_instructions <= 1000000:
         raise ValueError("invalid instruction limit")
     end = text_off + text_size
-    queue = deque([text_off])
+    entry = text_off if start is None else text_off + start
+    if not (text_off <= entry < end and entry % 4 == 0):
+        raise ValueError("invalid start offset")
+    queue = deque([entry])
     visited = set()
     kinds = Counter()
     svc_immediates = Counter()
@@ -70,11 +74,14 @@ def analyze_entry(blob: bytes, max_instructions: int = 100000) -> dict:
             targets = [next_pc]
         elif word & 0xffe0001f in (0xd4000002, 0xd4000003, 0xd4200000):
             kinds["trap_stop"] += 1
+        elif word & 0xffff0000 == 0:
+            # UDF #imm16: permanently undefined, emitted after noreturn calls.
+            kinds["udf_stop"] += 1
         else:
             targets = [next_pc]
         queue.extend(targets)
     return {
-        "schema_version": 1, "entry_offset": text_off,
+        "schema_version": 1, "entry_offset": entry,
         "visited_instruction_count": len(visited),
         "text_instruction_slots": text_size // 4,
         "branch_kinds": dict(sorted(kinds.items())),
