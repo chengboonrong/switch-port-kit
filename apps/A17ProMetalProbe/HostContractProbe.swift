@@ -40,11 +40,26 @@ enum HostContractProbe {
             && reserved.result == UInt32(SPK_RESULT_INVALID_ARGUMENT)
             && reserved.value == 0
 
+        // Builds the libnx loader config list only; no guest code runs.
+        var startup = SPKGuestStartup(main_thread_handle: 0x1234,
+                                      heap_address: 0x8000000, heap_size: 0x2000000)
+        var entries = [SPKConfigEntry](repeating: SPKConfigEntry(), count: 3)
+        var entryCount: UInt32 = 0
+        let configStatus = spk_guest_config_build(&startup, &entries, 3, &entryCount)
+        let configOK = configStatus == UInt32(SPK_RESULT_OK) && entryCount == 3
+            && MemoryLayout<SPKConfigEntry>.stride == 24
+            && entries[0].key == UInt32(SPK_ENTRY_MAIN_THREAD_HANDLE) && entries[0].value.0 == 0x1234
+            && entries[1].key == UInt32(SPK_ENTRY_OVERRIDE_HEAP)
+            && entries[1].value == (0x8000000, 0x2000000)
+            && entries[2].key == UInt32(SPK_ENTRY_END_OF_LIST)
+            && entries.allSatisfy { $0.flags == 0 }
+
         return [
             "host_contract_ping: \(pingOK ? "PASS" : "FAIL")",
             "host_contract_unknown_request: \(unknownOK ? "PASS" : "FAIL")",
             "host_contract_monotonic_clock: \(clockOK ? "PASS" : "FAIL")",
             "host_contract_reserved_argument: \(reservedOK ? "PASS" : "FAIL")",
+            "guest_startup_config: \(configOK ? "PASS" : "FAIL")",
             "host_contract_scope: HOST_ONLY_NOT_HORIZON"
         ]
     }
