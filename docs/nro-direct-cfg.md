@@ -1,13 +1,13 @@
 # 2048 NRO direct-branch candidate graph
 
-The `tools/nro_direct_cfg.py` function starts at the NRO text entry offset and explores direct AArch64 B, BL, B.cond, CBZ/CBNZ and TBZ/TBNZ edges, plus fallthrough. It stops at BR/RET and records BLR as an unresolved indirect frontier while continuing its fallthrough.
+The `tools/nro_direct_cfg.py` function starts at the NRO text entry offset and explores direct AArch64 B, BL, B.cond, CBZ/CBNZ and TBZ/TBNZ edges, plus fallthrough. It stops at BR/RET and at UDF (in 2048 almost all are zero padding between functions), and records BLR as an unresolved indirect frontier while continuing its fallthrough.
 
-**This is an approximate static graph, not proof of executable reachability.** It does not resolve BR/BLR, exception returns, function pointers or jump tables; inline data may be mistaken for instructions. It does not run ARM64 instructions.
+**This is an approximate static graph, not proof of executable reachability.** Calls to noreturn functions that are not followed by UDF still fall through into the next function (in 2048, 41 of 46 `diagAbortWithResult` call sites), which adds false candidates. It does not resolve BR/BLR, exception returns, function pointers or jump tables; inline data may be mistaken for instructions. It does not run ARM64 instructions.
 
 Read-only local measurements on the user-supplied `2048.nro`:
 - 44,032 four-byte instruction slots in the declared text region
-- 25,198 distinct candidate graph locations traversed
-- 631 unresolved indirect/return boundaries
+- 25,005 distinct candidate graph locations traversed (25,198 before UDF stopped fallthrough)
+- 619 unresolved indirect/return boundaries
 - 22 SVC candidate encodings in the graph, compared with 23 from linear scanning
 - Zero out-of-text direct edges observed
 
@@ -19,5 +19,7 @@ Usage from the repository root:
 from pathlib import Path
 from tools.nro_direct_cfg import analyze_entry
 report = analyze_entry(Path("/private/2048.nro").read_bytes())
+# one function only, e.g. libnx __libnx_init at text+0xd0f0:
+init = analyze_entry(Path("/private/2048.nro").read_bytes(), start=0xd0f0)
 print(report)
 ```
