@@ -33,7 +33,7 @@ The README lists iOS/iPadOS **26+** on iPhone 15 Pro or newer (A17 Pro or later)
 
 The listed split comes from BC textures, not from a device list:
 - `front_ios_device_check` in `dm/ios/Sources/main.m` runs when Play is pressed, or at once in an app without a launcher, and refuses to start only if `MTLDevice.supportsBCTextureCompression` is false. It does not check the device model.
-- `mtl_init` in `nvn_mtl.m` stops the other routes the same way. It also requires unified memory, and the NVN layer needs the Metal 4 GPU family; the probe reports neither.
+- `mtl_init` in `nvn_mtl.m` refuses a GPU without BC on the routes that skip that check, except a device without Metal 4, which it handles earlier. It also requires unified memory, and the NVN layer needs the Metal 4 GPU family and a residency set. The probe tests MTL4 queue creation, an empty submit and a compute write, but not those three flags or residency set creation.
 - The refusal message names the supported devices, but the decision uses only that GPU property. Upstream's comment there gives A16 and older as the GPUs without BC.
 - `dm/ios/project.yml` targets iPhone and iPad, and code search finds no `UIRequiredDeviceCapabilities`. The one `hw.machine` read found, in `dm/host/save_sync.c`, only labels which device a save came from.
 
@@ -53,7 +53,7 @@ The earlier note about narrower-screen support in `dm/host/dm_uiscreen.h` is wit
 
 This is not evidence from this project, and it does not make the device supported:
 - **Build:** made on 2026-10-29 with the reporter's local changes, so it is not this audit's commit.
-- **Scope:** the reporter calls it one working run, not a stability or artifact-free claim, and does not assume the device is validated upstream. It covers one game.
+- **Scope:** the reporter calls it one working run, not a stability or artifact-free claim, and does not assume the device is validated upstream. The working run still logged rendering warnings. It covers one game.
 - **BC:** upstream says a GPU without BC aborts at the first BC texture, so the run suggests this iPad's GPU has BC. That is an inference from someone else's log, not a measurement, so the matrix row stays open.
 
 ## Licensing
@@ -86,7 +86,7 @@ Keep the relevant notices and check all transitive and bundled sources before im
 | BC1 / BC3 / BC7 allocations | Unverified | Run Metal probe |
 | Correct compressed texture sampling | BC1/BC3 readback in probe, unverified on target; BC7 not tested | Run Metal probe; add BC7 |
 | Reason for the iPad M1+ wording | Answered: the BC capability, in `main.m` and `mtl_init`; no device-model check found | Re-check at each re-pin |
-| A17 Pro iPad Metal 4 family and GPU architecture name | Unverified; probe reports neither | Add both to the probe report |
+| A17 Pro iPad Metal 4 family, unified memory, residency set and GPU architecture name | Unverified; probe covers MTL4 queues only | Add these to the probe report |
 | `-mcpu=apple-a18` build on A17 Pro | Unknown; no binary audit | Toolchain and disassembly audit before import |
 | Runtime executable/codesigning constraints | Unverified on iPad mini | Audit embed/entitlements, then test |
 | GPU and RAM headroom for selected title | Unknown | Per-title footprint + physical run |
@@ -95,4 +95,4 @@ Keep the relevant notices and check all transitive and bundled sources before im
 
 ## Recommendation
 
-Keep the first deliverable a standalone Metal probe, and run it on the physical iPad mini A17 Pro. Issue #626 raises the odds of a pass, but this project needs its own measurement. Treat the BC result as the first go/no-go. Do not patch or bypass upstream's device check. Do not attempt a commercial-title conversion until the runtime and GPU blockers have recorded evidence.
+Keep the first deliverable a standalone Metal probe, and run it on the physical iPad mini A17 Pro. Issue #626 suggests the BC check may pass, but this project needs its own measurement. Treat the BC result as the first go/no-go. Do not patch or bypass upstream's device check. Do not attempt a commercial-title conversion until the runtime and GPU blockers have recorded evidence.
